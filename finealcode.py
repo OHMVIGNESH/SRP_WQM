@@ -295,6 +295,8 @@ try:
 
             
         if turbidity > int(Th_1):
+            current_datetime = datetime.datetime.now()
+            current_datetime_str = current_datetime.strftime("%Y-%m-%d %H:%M:%S")
             data_alert_t1 = {
             'Macid': str(hex(uuid.getnode())),
             'Time': str(current_datetime_str),
