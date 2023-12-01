@@ -1,3 +1,6 @@
+import logging
+import logging.handlers
+
 import time
 import serial
 import json
@@ -17,8 +20,34 @@ from sympy import symbols, Eq, solve, ln
 #GPIO.setmode(GPIO.BCM)
 #led_pin = 18
 #GPIO.setup(led_pin, GPIO.OUT)
+log_file_path = os.environ.get("LOGFILE", "/home/maxuser/Desktop/SRp/SRP_WQM/SRP_log.log")
 
+# Create a formatter that includes date and time
+formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
 
+# Create a WatchedFileHandler for the log file
+handler = logging.handlers.WatchedFileHandler(log_file_path)
+handler.setFormatter(formatter)
+
+# Get the root logger and set its level
+root = logging.getLogger()
+root.setLevel(os.environ.get("LOGLEVEL", "INFO"))
+
+# Add the handler to the root logger
+root.addHandler(handler)
+
+# Create a RotatingFileHandler with max log size and backup count
+max_log_size = 10 * 1024 * 1024  # 10 MB
+file_handler = logging.handlers.RotatingFileHandler(log_file_path, maxBytes=max_log_size, backupCount=5)
+file_handler.setFormatter(formatter)
+root.addHandler(file_handler)
+
+# Example log messages
+root.debug("This is a debug message")
+root.info("This is an info message")
+root.warning("This is a warning message")
+root.error("This is an error message")
+root.critical("This is a critical message")
 # Declare global variables
 Macid = None
 Time = None
@@ -250,14 +279,42 @@ if check_config == 'False':
         time.sleep(5)    
 while True:
     try:
-        port = '/dev/ttyUSB1'
-        baud_rate = 9600
-        timeout = 10
-
-    # Open the serial port
-        ser = serial.Serial(port, baud_rate, timeout=timeout)
         time_now = time.time()
         time_now1 = time.time()
+        time_now2 = time.time()
+        time_now3 = time.time()
+    #     port = '/dev/ttyUSB1'
+    #     baud_rate = 9600
+    #     timeout = 10
+
+    # # Open the serial port
+    #     ser = serial.Serial(port, baud_rate, timeout=timeout)
+        try:
+            port = '/dev/ttyUSB1'
+            baud_rate = 9600
+            timeout = 10
+            ser = serial.Serial(port, baud_rate, timeout=timeout)
+        except serial.SerialException as e:
+            print(f"Serial port error: {e}")
+            current_datetime = datetime.datetime.now()
+            current_datetime_str = current_datetime.strftime("%Y-%m-%d %H:%M:%S")
+            data_heartbeat = {
+            'Macid': str(hex(uuid.getnode())),
+            'Time': str(current_datetime_str),
+            'status':"2",
+                }
+            # Create JSON data
+            heart_json_data = json.dumps(data_heartbeat, indent=4)
+            print(heart_json_data )
+            # MQTT data send
+            mqtt_data_alert_send = clientmqtt.publish("MAX/SRP/WQM", heart_json_data)
+            status = mqtt_data_alert_send.rc
+            if status == mqtt_client.MQTT_ERR_SUCCESS:
+                print("Sent")
+            else:
+                print("Failed")
+            time.sleep(1)
+
         SERIAL = '/dev/ttyUSB0'
         BAUD = 9600
         Defaults.UnitId = 1
@@ -269,10 +326,31 @@ while True:
         while (bool(connection) != True):
             print("modbus loading...")
             connection = client.connect()
+            current_time2 = time.time()
+        
+            if current_time2 > time_now2+ int(2):
+                time_now2 = current_time2
+                current_datetime = datetime.datetime.now()
+                current_datetime_str = current_datetime.strftime("%Y-%m-%d %H:%M:%S")
+                data_heartbeat = {
+                'Macid': str(hex(uuid.getnode())),
+                'Time': str(current_datetime_str),
+                'status':"1",
+                    }
+                # Create JSON data
+                heart_json_data = json.dumps(data_heartbeat, indent=4)
+                print(heart_json_data )
+                # MQTT data send
+                mqtt_data_alert_send = clientmqtt.publish("MAX/SRP/WQM", heart_json_data)
+                status = mqtt_data_alert_send.rc
+                if status == mqtt_client.MQTT_ERR_SUCCESS:
+                    print("Sent")
+                else:
+                    print("Failed")
             print(bool(connection))
             time.sleep(1)
         while True:
-            heartbeat_delay = 7
+            heartbeat_delay = 5
             current_time1 = time.time()
             if current_time1 > time_now1+ int(heartbeat_delay):
                 time_now1 = current_time1
