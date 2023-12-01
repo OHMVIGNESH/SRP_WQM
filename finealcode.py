@@ -1,8 +1,10 @@
 import time
+import serial
 import json
 import os 
 import datetime
 import uuid
+import traceback
 from pymodbus.constants import Endian
 from pymodbus.constants import Defaults
 from pymodbus.payload import BinaryPayloadDecoder
@@ -10,6 +12,13 @@ from pymodbus.client.sync import ModbusSerialClient as ModbusClient
 from pymodbus.payload import BinaryPayloadBuilder
 from pymodbus.transaction import ModbusRtuFramer
 from paho.mqtt import client as mqtt_client
+from sympy import symbols, Eq, solve, ln
+#import RPi.GPIO as GPIO
+#GPIO.setmode(GPIO.BCM)
+#led_pin = 18
+#GPIO.setup(led_pin, GPIO.OUT)
+
+
 # Declare global variables
 Macid = None
 Time = None
@@ -34,6 +43,8 @@ Res_topic = None
 Alert_topic = None
 global temprature
 global turbidity
+global tds_value
+global ts_value
 def load_config_data():
     global Macid, Time, Resid, Typeid, cal_1, cal_2, cal_3, cal_4, Th_1, Th_2, Th_3, Th_4, delay, ssid, pass_val, Broker_id, Port_id, Config_topic, Livedata_topic, Res_topic, Alert_topic
     config_file = open("Config.json","r")
@@ -92,6 +103,7 @@ check_config = check_config_json['config_device']
 
 print("Check config : " + str (check_config))
 check_config_json_file.close() 
+
 #check conditon for config
 if check_config == 'True':
     print("****************Already configered****************")
@@ -213,9 +225,6 @@ mqttstatus = clientmqtt.connect(broker_address, port)
 clientmqtt.loop_start()
 while Connected != True:
     time.sleep(0.1)
-
-
-
 if check_config == 'False':
     print("****************Not configered****************")
     while(1):
@@ -238,83 +247,199 @@ if check_config == 'False':
             print("Msg Successfully sent")
         else:
             print("Msg failed to be sent")
-        time.sleep(5)
-# set Modbus defaults
-SERIAL = '/dev/ttyUSB0'
-BAUD = 9600
-Defaults.UnitId = 1
-Defaults.Retries = 5
-counter = 1
-client = ModbusClient(method='rtu', port=SERIAL, stopbits=1, bytesize=8, timeout=5, baudrate=BAUD, parity='N')
-connection = client.connect()
-print(bool(connection))
+        time.sleep(5)    
+while True:
+    try:
+        port = '/dev/ttyUSB1'
+        baud_rate = 9600
+        timeout = 10
 
-try:
-    #load_config_data()
-    time_now = time.time()
-    while True:
-        temp = client.read_input_registers(address=2, count=2, unit=1)
-        temprature = BinaryPayloadDecoder.fromRegisters(temp.registers, Endian.Big, wordorder=Endian.Little)
-       #temprature = round(temprature.decode_32bit_float(),3)
-        temprature = round(temprature.decode_32bit_float(),3)
-        time.sleep(0.1)
-        trub = client.read_input_registers(address=4, count=2, unit=1)
-        turbidity = BinaryPayloadDecoder.fromRegisters(trub.registers, Endian.Big, wordorder=Endian.Little)
-       # turbidity = round(turbidity.decode_32bit_float()*cal_1,3)
-        turbidity = round(turbidity.decode_32bit_float(),3)
-        time.sleep(0.1)
-        current_time = time.time()
-        if current_time > time_now + int(delay):
-  
-            time_now = current_time
-            current_datetime = datetime.datetime.now()
-            current_datetime_str = current_datetime.strftime("%Y-%m-%d %H:%M:%S")
-            print("Mac_id : " + str(uuid.getnode()) + " , Time:" + str(current_datetime_str) +
-              " , Temperature : " + str(temprature) + " , Turbidity : " + str(turbidity)
-              )
-            data = {
-            'Macid': str(hex(uuid.getnode())),
-            'Time': str(current_datetime_str),
-            'parameter1': str(turbidity),
-            'parameter2': "0",
-            'parameter3': "0",
-            'parameter4': "0",
-            'parameter5': "0"
-                  }
-            # Create JSON data
-            sensor_json_data = json.dumps(data, indent=4)
-            print(sensor_json_data)
-            # MQTT data send
-            mqtt_data_send = clientmqtt.publish(Livedata_topic, sensor_json_data)
+    # Open the serial port
+        ser = serial.Serial(port, baud_rate, timeout=timeout)
+        time_now = time.time()
+        SERIAL = '/dev/ttyUSB0'
+        BAUD = 9600
+        Defaults.UnitId = 1
+        Defaults.Retries = 5
+        counter = 1
+        client = ModbusClient(method='rtu', port=SERIAL, stopbits=1, bytesize=8, timeout=5, baudrate=BAUD, parity='N')
+        connection = client.connect()
+        print(bool(connection))
+        while (bool(connection) != True):
+            print("modbus loading...")
+            connection = client.connect()
+            print(bool(connection))
+            time.sleep(1)
+        while True:
             
-            status = mqtt_data_send.rc
-            if status == mqtt_client.MQTT_ERR_SUCCESS:
-                print("Sent")
-            else:
-                print("Failed")
+            temp = client.read_input_registers(address=2, count=2, unit=1)
+            temprature = BinaryPayloadDecoder.fromRegisters(temp.registers, Endian.Big, wordorder=Endian.Little)
+            #temprature = round(temprature.decode_32bit_float(),3)
+            temprature = round(temprature.decode_32bit_float(),3)
+            time.sleep(0.1)
+            trub = client.read_input_registers(address=4, count=2, unit=1)
+            turbidity = BinaryPayloadDecoder.fromRegisters(trub.registers, Endian.Big, wordorder=Endian.Little)
+            # turbidity = round(turbidity.decode_32bit_float()*cal_1,3)
+            turbidity = round(turbidity.decode_32bit_float(),3)
+            TSS, Turb = symbols('TSS Turb')
+            equation = Eq(ln(TSS), 0.979 * ln(turbidity) + 0.574)
+            solution = solve(equation, TSS)
+            print("-------------------------------------------------------")
+            print("TSS :", solution[0])
+            tss_value = solution[0]
 
+
+            #GPIO.output(led_pin, GPIO.HIGH)
+            #print("** read from arduino ****")
             
-        if turbidity > int(Th_1):
-            current_datetime = datetime.datetime.now()
-            current_datetime_str = current_datetime.strftime("%Y-%m-%d %H:%M:%S")
-            data_alert_t1 = {
-            'Macid': str(hex(uuid.getnode())),
-            'Time': str(current_datetime_str),
-            'Alert':"1",
-            'Value': str(turbidity),
-            "Alert_t":"0"
-                  }
-            # Create JSON data
-            Alert_json_data = json.dumps(data_alert_t1, indent=4)
-            print(Alert_json_data)
-            # MQTT data send
-            mqtt_data_alert_send = clientmqtt.publish(Alert_topic, Alert_json_data)
-            status = mqtt_data_alert_send.rc
-            if status == mqtt_client.MQTT_ERR_SUCCESS:
-                print("Sent")
-            else:
-                print("Failed")
+            try:
+                line = ser.readline().decode('utf-8').strip()
+
+                if line:
+                    #print(f"Received data: {line}")
+
+                    try:
+                        data = json.loads(line)
+                        #voltage = data['voltage']
+                        tds = data['tds']
+                        #print(f"Voltage: {voltage}, TDS: {tds}")
+                    except json.JSONDecodeError as e:
+                        #print(f"Error decoding JSON: {e}")
+                        continue
+            except serial.SerialException as se:
+                print(f"Serial exception: {se}")
 
 
-except Exception as e:
-    print("Error:", str(e))
+            tds_value = float(tds)
+            print("TDS :"+str(tds_value))
+            ts_value = float(tds_value) + float(tss_value)
+            print("TS :" + str(ts_value))
+            print("-------------------------------------------------------")
+            current_time = time.time()
+            #print("delay: "+str(delay) + " current_time:" + str(current_time)+" time_now:"+str(time_now))
+            
+            if current_time > time_now + int(delay):
+                
+                time_now = current_time
+                current_datetime = datetime.datetime.now()
+                current_datetime_str = current_datetime.strftime("%Y-%m-%d %H:%M:%S")
+                
+                print("-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------")
+                print("Mac_id : " + str(uuid.getnode()) + " , Time:" + str(current_datetime_str) + " , Temperature : " + str(temprature) + " , Turbidity : " + str(turbidity)+ ", TSS:"+str(tss_value) + ", TDS : " + str(tds_value) + ", ts :" + str(ts_value))
+                print("-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------")
+
+                data = {
+                'Macid': str(hex(uuid.getnode())),
+                'Time': str(current_datetime_str),
+                'parameter1': str(ts_value),
+                'parameter2': str(tss_value),
+                'parameter3': str(tds_value),
+                'parameter4': str(turbidity),
+                'parameter5': "0"
+                    }
+                # Create JSON data
+                sensor_json_data = json.dumps(data, indent=4)
+                print(sensor_json_data)
+                # MQTT data send
+                mqtt_data_send = clientmqtt.publish(Livedata_topic, sensor_json_data)
+                
+                status = mqtt_data_send.rc
+                if status == mqtt_client.MQTT_ERR_SUCCESS:
+                    print("Sent")
+                else:
+                    print("Failed")
+
+                
+            if int(ts_value) > int(Th_1):
+                current_datetime = datetime.datetime.now()
+                current_datetime_str = current_datetime.strftime("%Y-%m-%d %H:%M:%S")
+                data_alert_t1 = {
+                'Macid': str(hex(uuid.getnode())),
+                'Time': str(current_datetime_str),
+                'Alert':"1",
+                'Value': str(ts_value),
+                "Alert_t":"0"
+                    }
+                
+                # Create JSON data
+                Alert_json_data = json.dumps(data_alert_t1, indent=4)
+                print(Alert_json_data)
+                # MQTT data send
+                mqtt_data_alert_send = clientmqtt.publish(Alert_topic, Alert_json_data)
+                status = mqtt_data_alert_send.rc
+                if status == mqtt_client.MQTT_ERR_SUCCESS:
+                    print("Sent")
+                else:
+                    print("Failed")
+
+            if int(tss_value) > int(Th_2):
+                current_datetime = datetime.datetime.now()
+                current_datetime_str = current_datetime.strftime("%Y-%m-%d %H:%M:%S")
+                data_alert_t1 = {
+                'Macid': str(hex(uuid.getnode())),
+                'Time': str(current_datetime_str),
+                'Alert':"2",
+                'Value': str(tss_value),
+                "Alert_t":"0"
+                    }
+                
+                # Create JSON data
+                Alert_json_data = json.dumps(data_alert_t1, indent=4)
+                print(Alert_json_data)
+                # MQTT data send
+                mqtt_data_alert_send = clientmqtt.publish(Alert_topic, Alert_json_data)
+                status = mqtt_data_alert_send.rc
+                if status == mqtt_client.MQTT_ERR_SUCCESS:
+                    print("Sent")
+                else:
+                    print("Failed")
+            
+            if int(tds_value) > int(Th_3):
+                current_datetime = datetime.datetime.now()
+                current_datetime_str = current_datetime.strftime("%Y-%m-%d %H:%M:%S")
+                data_alert_t1 = {
+                'Macid': str(hex(uuid.getnode())),
+                'Time': str(current_datetime_str),
+                'Alert':"3",
+                'Value': str(tds_value),
+                "Alert_t":"0"
+                    }
+                
+                # Create JSON data
+                Alert_json_data = json.dumps(data_alert_t1, indent=4)
+                print(Alert_json_data)
+                # MQTT data send
+                mqtt_data_alert_send = clientmqtt.publish(Alert_topic, Alert_json_data)
+                status = mqtt_data_alert_send.rc
+                if status == mqtt_client.MQTT_ERR_SUCCESS:
+                    print("Sent")
+                else:
+                    print("Failed")
+            
+            if int(turbidity) > int(Th_4):
+                current_datetime = datetime.datetime.now()
+                current_datetime_str = current_datetime.strftime("%Y-%m-%d %H:%M:%S")
+                data_alert_t1 = {
+                'Macid': str(hex(uuid.getnode())),
+                'Time': str(current_datetime_str),
+                'Alert':"4",
+                'Value': str(turbidity),
+                "Alert_t":"0"
+                    }
+                
+                # Create JSON data
+                Alert_json_data = json.dumps(data_alert_t1, indent=4)
+                print(Alert_json_data)
+                # MQTT data send
+                mqtt_data_alert_send = clientmqtt.publish(Alert_topic, Alert_json_data)
+                status = mqtt_data_alert_send.rc
+                if status == mqtt_client.MQTT_ERR_SUCCESS:
+                    print("Sent")
+                else:
+                    print("Failed")
+    except Exception as e:
+        print("Error:", str(e))
+        traceback.print_exc()
+        print("****************ERROR*********************")
+        time.sleep(2)
+        continue 
