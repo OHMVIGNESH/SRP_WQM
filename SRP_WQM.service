@@ -1,0 +1,10 @@
+[Unit]
+Description="SRP-WQM"
+
+[Service]
+User=maxuser
+WorkingDirectory= /home/maxuser/Desktop/SRp/SRP_WQM
+ExecStart=/usr/bin/python3.6 /home/maxuser/Desktop/SRp/SRP_WQM/finealcode.py
+
+[Install]
+WantedBy=multi-user.target

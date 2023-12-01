@@ -257,6 +257,7 @@ while True:
     # Open the serial port
         ser = serial.Serial(port, baud_rate, timeout=timeout)
         time_now = time.time()
+        time_now1 = time.time()
         SERIAL = '/dev/ttyUSB0'
         BAUD = 9600
         Defaults.UnitId = 1
@@ -271,7 +272,27 @@ while True:
             print(bool(connection))
             time.sleep(1)
         while True:
-            
+            heartbeat_delay = 7
+            current_time1 = time.time()
+            if current_time1 > time_now1+ int(heartbeat_delay):
+                time_now1 = current_time1
+                current_datetime = datetime.datetime.now()
+                current_datetime_str = current_datetime.strftime("%Y-%m-%d %H:%M:%S")
+                data_heartbeat = {
+                'Macid': str(hex(uuid.getnode())),
+                'Time': str(current_datetime_str),
+                'status':"Alive",
+                    }
+                # Create JSON data
+                heart_json_data = json.dumps(data_heartbeat, indent=4)
+                print(heart_json_data )
+                # MQTT data send
+                mqtt_data_alert_send = clientmqtt.publish("MAX/SRP/WQM", heart_json_data)
+                status = mqtt_data_alert_send.rc
+                if status == mqtt_client.MQTT_ERR_SUCCESS:
+                    print("Sent")
+                else:
+                    print("Failed")
             temp = client.read_input_registers(address=2, count=2, unit=1)
             temprature = BinaryPayloadDecoder.fromRegisters(temp.registers, Endian.Big, wordorder=Endian.Little)
             #temprature = round(temprature.decode_32bit_float(),3)
@@ -327,14 +348,21 @@ while True:
                 print("-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------")
                 print("Mac_id : " + str(uuid.getnode()) + " , Time:" + str(current_datetime_str) + " , Temperature : " + str(temprature) + " , Turbidity : " + str(turbidity)+ ", TSS:"+str(tss_value) + ", TDS : " + str(tds_value) + ", ts :" + str(ts_value))
                 print("-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------")
-
+                ts_cal = float(ts_value)*float(cal_1)
+                tss_cal = float(tss_value)*float(cal_2)
+                tds_cal = float(tds_value)*float(cal_3)
+                turbidity_cal = float(turbidity)*float(cal_4)
+                print("After calibration----------------------------------------------------------------------------------------")
+                print( "Turbidity : " + str(turbidity_cal)+ ", TSS:"+str(tss_cal) + ", TDS : " + str(tds_cal) + ", ts :" + str(ts_cal))
+                print("-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------")
+                
                 data = {
                 'Macid': str(hex(uuid.getnode())),
                 'Time': str(current_datetime_str),
-                'parameter1': str(ts_value),
-                'parameter2': str(tss_value),
-                'parameter3': str(tds_value),
-                'parameter4': str(turbidity),
+                'parameter1': str(ts_cal),
+                'parameter2': str(tss_cal),
+                'parameter3': str(tds_cal),
+                'parameter4': str(turbidity_cal),
                 'parameter5': "0"
                     }
                 # Create JSON data
