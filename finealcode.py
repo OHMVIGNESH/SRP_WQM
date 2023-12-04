@@ -102,40 +102,40 @@ def load_config_data():
     Alert_topic = data["Alert_topic"]
 
     # Print the variables
-    print("Macid:", Macid)
-    print("Time:", Time)
-    print("Resid:", Resid)
-    print("Typeid:", Typeid)
-    print("cal_1:", cal_1)
-    print("cal_2:", cal_2)
-    print("cal_3:", cal_3)
-    print("cal_4:", cal_4)
-    print("Th_1:", Th_1)
-    print("Th_2:", Th_2)
-    print("Th_3:", Th_3)
-    print("Th_4:", Th_4)
-    print("delay:", delay)
-    print("ssid:", ssid)
-    print("pass:", pass_val)
-    print("Broker_id:", Broker_id)
-    print("Port_id:", Port_id)
-    print("Config_topic:", Config_topic)
-    print("Livedata_topic:", Livedata_topic)
-    print("Res_topic:", Res_topic)
-    print("Alert_topic:", Alert_topic)
+    # print("Macid:", Macid)
+    # print("Time:", Time)
+    # print("Resid:", Resid)
+    # print("Typeid:", Typeid)
+    # print("cal_1:", cal_1)
+    # print("cal_2:", cal_2)
+    # print("cal_3:", cal_3)
+    # print("cal_4:", cal_4)
+    # print("Th_1:", Th_1)
+    # print("Th_2:", Th_2)
+    # print("Th_3:", Th_3)
+    # print("Th_4:", Th_4)
+    # print("delay:", delay)
+    # print("ssid:", ssid)
+    # print("pass:", pass_val)
+    # print("Broker_id:", Broker_id)
+    # print("Port_id:", Port_id)
+    # print("Config_topic:", Config_topic)
+    # print("Livedata_topic:", Livedata_topic)
+    # print("Res_topic:", Res_topic)
+    # print("Alert_topic:", Alert_topic)
 
 #check config
 check_config_json_file = open("check_config.json", "r")  
 check_config_json = json.load(check_config_json_file)
-print(check_config_json) 
+#print(check_config_json) 
 check_config = check_config_json['config_device']
 
-print("Check config : " + str (check_config))
+#print("Check config : " + str (check_config))
 check_config_json_file.close() 
 
 #check conditon for config
 if check_config == 'True':
-    print("****************Already configered****************")
+    #print("****************Already configered****************")
     load_config_data()
 
 send_config_topic = "NC/"+ str(hex(uuid.getnode()))+ "/WQM"
@@ -147,24 +147,24 @@ def on_connect(client, userdata, flags, rc):
         client.subscribe(Res_topic) 
         global Connected
         Connected = True
-        print(f"Subscribed to topic: {Res_topic}")  # Print the subscribed topic
-    else:
-        print("Connection failed")
+       #print(f"Subscribed to topic: {Res_topic}")  # Print the subscribed topic
+    #else:
+        #print("Connection failed")
 
 def on_message(client, userdata, msg):
-    print(f"Received message on topic '{msg.topic}': {msg.payload.decode()}")  # Print received data
+    #print(f"Received message on topic '{msg.topic}': {msg.payload.decode()}")  # Print received data
     time.sleep(1)
     data_checking = msg.payload.decode()
     test_data = json.loads(data_checking)
     check_con = test_data["Typeid"]
-    print("Typeid : " +str(check_con))
+    #print("Typeid : " +str(check_con))
     if check_con == 0:
-        print("<----------Config cmd received----------->")
+        #print("<----------Config cmd received----------->")
         data_sub_json = msg.payload.decode()
         with open("Config.json", "w") as save_json_file:
             # Use json.dump() to write the JSON data to the file
             json.dump(json.loads(data_sub_json), save_json_file, indent=4)
-        print("***** JSON data saved to Config.json ****")
+        #print("***** JSON data saved to Config.json ****")
         current_datetime = datetime.datetime.now()
         current_datetime_str = current_datetime.strftime("%Y-%m-%d %H:%M:%S")
         reconfig_data = {
@@ -177,8 +177,8 @@ def on_message(client, userdata, msg):
         rewrite_config_json = open("check_config.json", "w")
         rewrite_config_json.write(json.dumps(reconfig_data))
         time.sleep(1)
-        print(rewrite_config_json)
-        print("*****New json check saved form config file  ****")
+        #print(rewrite_config_json)
+        #print("*****New json check saved form config file  ****")
         rewrite_config_json.close()
         time.sleep(1)
     if check_con == 1:
@@ -200,19 +200,19 @@ def on_message(client, userdata, msg):
         delay = deserialized_data["delay"]
     
         # Print each variable
-        print("Macid:", Macid)
-        print("Time:", Time)
-        print("Typeid:", Typeid)
-        print("Resid:", Resid)
-        print("cal_1:", cal_1)
-        print("cal_2:", cal_2)
-        print("cal_3:", cal_3)
-        print("cal_4:", cal_4)
-        print("Th_1:", Th_1)
-        print("Th_2:", Th_2)
-        print("Th_3:", Th_3)
-        print("Th_4:", Th_4)
-        print("delay:", delay)
+        # print("Macid:", Macid)
+        # print("Time:", Time)
+        # print("Typeid:", Typeid)
+        # print("Resid:", Resid)
+        # print("cal_1:", cal_1)
+        # print("cal_2:", cal_2)
+        # print("cal_3:", cal_3)
+        # print("cal_4:", cal_4)
+        # print("Th_1:", Th_1)
+        # print("Th_2:", Th_2)
+        # print("Th_3:", Th_3)
+        # print("Th_4:", Th_4)
+        # print("delay:", delay)
         with open("Config.json", "r") as json_file:
             data = json.load(json_file)
             # Modify the values with new values
@@ -237,8 +237,8 @@ def on_message(client, userdata, msg):
         # Verify the changes by reading and printing the updated JSON file
         with open("Config.json", "r") as json_file:
             updated_data = json.load(json_file)
-            print("******Updated_data******")
-            print(updated_data)
+            #print("******Updated_data******")
+            #print(updated_data)
         
     if check_con == 2:
         os.system("shutdown -r")
@@ -255,11 +255,11 @@ clientmqtt.loop_start()
 while Connected != True:
     time.sleep(0.1)
 if check_config == 'False':
-    print("****************Not configered****************")
+    #print("****************Not configered****************")
     while(1):
         check_config_json_file = open("check_config.json", "r")  
         check_config_json = json.load(check_config_json_file)
-        print(check_config_json) 
+        #print(check_config_json) 
         check_config = check_config_json['config_device']
         if check_config == 'True':
             load_config_data()
@@ -270,12 +270,12 @@ if check_config == 'False':
         json_send_config = {"Macid" : str(hex(uuid.getnode())),"Time" :str(current_datetime_str),"Location":"SRP","Category":"WQM"} 
         jsons_send_config = json.dumps(json_send_config, indent = 4)
         result = clientmqtt.publish("MAXI0001/NEWDEVICE", jsons_send_config)
-        print("JSON_SENT TO SERVER :")
-        print(jsons_send_config)
-        if result.rc == mqtt_client.MQTT_ERR_SUCCESS:
-            print("Msg Successfully sent")
-        else:
-            print("Msg failed to be sent")
+        #print("JSON_SENT TO SERVER :")
+        #print(jsons_send_config)
+        # if result.rc == mqtt_client.MQTT_ERR_SUCCESS:
+        #     #print("Msg Successfully sent")
+        # else:
+            #print("Msg failed to be sent")
         time.sleep(5)    
 while True:
     try:
@@ -295,7 +295,7 @@ while True:
             timeout = 10
             ser = serial.Serial(port, baud_rate, timeout=timeout)
         except serial.SerialException as e:
-            print(f"Serial port error: {e}")
+            #print(f"Serial port error: {e}")
             current_datetime = datetime.datetime.now()
             current_datetime_str = current_datetime.strftime("%Y-%m-%d %H:%M:%S")
             data_heartbeat = {
@@ -305,14 +305,14 @@ while True:
                 }
             # Create JSON data
             heart_json_data = json.dumps(data_heartbeat, indent=4)
-            print(heart_json_data )
+            #print(heart_json_data )
             # MQTT data send
-            mqtt_data_alert_send = clientmqtt.publish("MAX/SRP/WQM", heart_json_data)
+            mqtt_data_alert_send = clientmqtt.publish("MAX/SRP/HEARTBEAT", heart_json_data)
             status = mqtt_data_alert_send.rc
-            if status == mqtt_client.MQTT_ERR_SUCCESS:
-                print("Sent")
-            else:
-                print("Failed")
+            #if status == mqtt_client.MQTT_ERR_SUCCESS:
+                #print("Sent")
+            #else:
+                #print("Failed")
             time.sleep(1)
 
         SERIAL = '/dev/ttyUSB0'
@@ -322,9 +322,9 @@ while True:
         counter = 1
         client = ModbusClient(method='rtu', port=SERIAL, stopbits=1, bytesize=8, timeout=5, baudrate=BAUD, parity='N')
         connection = client.connect()
-        print(bool(connection))
+        #print(bool(connection))
         while (bool(connection) != True):
-            print("modbus loading...")
+            #print("modbus loading...")
             connection = client.connect()
             current_time2 = time.time()
         
@@ -339,15 +339,15 @@ while True:
                     }
                 # Create JSON data
                 heart_json_data = json.dumps(data_heartbeat, indent=4)
-                print(heart_json_data )
+                #print(heart_json_data )
                 # MQTT data send
-                mqtt_data_alert_send = clientmqtt.publish("MAX/SRP/WQM", heart_json_data)
+                mqtt_data_alert_send = clientmqtt.publish("MAX/SRP/HEARTBEAT", heart_json_data)
                 status = mqtt_data_alert_send.rc
-                if status == mqtt_client.MQTT_ERR_SUCCESS:
-                    print("Sent")
-                else:
-                    print("Failed")
-            print(bool(connection))
+               # if status == mqtt_client.MQTT_ERR_SUCCESS:
+                    #print("Sent")
+                #else:
+                    #print("Failed")
+            #print(bool(connection))
             time.sleep(1)
         while True:
             heartbeat_delay = 5
@@ -363,14 +363,14 @@ while True:
                     }
                 # Create JSON data
                 heart_json_data = json.dumps(data_heartbeat, indent=4)
-                print(heart_json_data )
+               # print(heart_json_data )
                 # MQTT data send
-                mqtt_data_alert_send = clientmqtt.publish("MAX/SRP/WQM", heart_json_data)
+                mqtt_data_alert_send = clientmqtt.publish("MAX/SRP/HEARTBEAT", heart_json_data)
                 status = mqtt_data_alert_send.rc
-                if status == mqtt_client.MQTT_ERR_SUCCESS:
-                    print("Sent")
-                else:
-                    print("Failed")
+                #if status == mqtt_client.MQTT_ERR_SUCCESS:
+                    #print("Sent")
+                #else:
+                   # print("Failed")
             temp = client.read_input_registers(address=2, count=2, unit=1)
             temprature = BinaryPayloadDecoder.fromRegisters(temp.registers, Endian.Big, wordorder=Endian.Little)
             #temprature = round(temprature.decode_32bit_float(),3)
@@ -383,8 +383,8 @@ while True:
             TSS, Turb = symbols('TSS Turb')
             equation = Eq(ln(TSS), 0.979 * ln(turbidity) + 0.574)
             solution = solve(equation, TSS)
-            print("-------------------------------------------------------")
-            print("TSS :", solution[0])
+            #print("-------------------------------------------------------")
+            #print("TSS :", solution[0])
             tss_value = solution[0]
 
 
@@ -406,14 +406,14 @@ while True:
                         #print(f"Error decoding JSON: {e}")
                         continue
             except serial.SerialException as se:
-                print(f"Serial exception: {se}")
-
+               # print(f"Serial exception: {se}")
+               sc= "temp"
 
             tds_value = float(tds)
-            print("TDS :"+str(tds_value))
+           # print("TDS :"+str(tds_value))
             ts_value = float(tds_value) + float(tss_value)
-            print("TS :" + str(ts_value))
-            print("-------------------------------------------------------")
+            # print("TS :" + str(ts_value))
+            # print("-------------------------------------------------------")
             current_time = time.time()
             #print("delay: "+str(delay) + " current_time:" + str(current_time)+" time_now:"+str(time_now))
             
@@ -423,16 +423,16 @@ while True:
                 current_datetime = datetime.datetime.now()
                 current_datetime_str = current_datetime.strftime("%Y-%m-%d %H:%M:%S")
                 
-                print("-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------")
-                print("Mac_id : " + str(uuid.getnode()) + " , Time:" + str(current_datetime_str) + " , Temperature : " + str(temprature) + " , Turbidity : " + str(turbidity)+ ", TSS:"+str(tss_value) + ", TDS : " + str(tds_value) + ", ts :" + str(ts_value))
-                print("-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------")
+                #print("-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------")
+                #print("Mac_id : " + str(uuid.getnode()) + " , Time:" + str(current_datetime_str) + " , Temperature : " + str(temprature) + " , Turbidity : " + str(turbidity)+ ", TSS:"+str(tss_value) + ", TDS : " + str(tds_value) + ", ts :" + str(ts_value))
+                #print("-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------")
                 ts_cal = float(ts_value)*float(cal_1)
                 tss_cal = float(tss_value)*float(cal_2)
                 tds_cal = float(tds_value)*float(cal_3)
                 turbidity_cal = float(turbidity)*float(cal_4)
-                print("After calibration----------------------------------------------------------------------------------------")
-                print( "Turbidity : " + str(turbidity_cal)+ ", TSS:"+str(tss_cal) + ", TDS : " + str(tds_cal) + ", ts :" + str(ts_cal))
-                print("-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------")
+                # print("After calibration----------------------------------------------------------------------------------------")
+                # print( "Turbidity : " + str(turbidity_cal)+ ", TSS:"+str(tss_cal) + ", TDS : " + str(tds_cal) + ", ts :" + str(ts_cal))
+                # print("-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------")
                 
                 data = {
                 'Macid': str(hex(uuid.getnode())),
@@ -445,15 +445,15 @@ while True:
                     }
                 # Create JSON data
                 sensor_json_data = json.dumps(data, indent=4)
-                print(sensor_json_data)
+                #print(sensor_json_data)
                 # MQTT data send
                 mqtt_data_send = clientmqtt.publish(Livedata_topic, sensor_json_data)
                 
                 status = mqtt_data_send.rc
-                if status == mqtt_client.MQTT_ERR_SUCCESS:
-                    print("Sent")
-                else:
-                    print("Failed")
+               # if status == mqtt_client.MQTT_ERR_SUCCESS:
+                   #print("Sent")
+                #else:
+                    #print("Failed")
 
                 
             if int(ts_value) > int(Th_1):
@@ -469,14 +469,14 @@ while True:
                 
                 # Create JSON data
                 Alert_json_data = json.dumps(data_alert_t1, indent=4)
-                print(Alert_json_data)
+                #print(Alert_json_data)
                 # MQTT data send
                 mqtt_data_alert_send = clientmqtt.publish(Alert_topic, Alert_json_data)
                 status = mqtt_data_alert_send.rc
-                if status == mqtt_client.MQTT_ERR_SUCCESS:
-                    print("Sent")
-                else:
-                    print("Failed")
+               # if status == mqtt_client.MQTT_ERR_SUCCESS:
+                   # print("Sent")
+               # else:
+                   # print("Failed")
 
             if int(tss_value) > int(Th_2):
                 current_datetime = datetime.datetime.now()
@@ -491,14 +491,14 @@ while True:
                 
                 # Create JSON data
                 Alert_json_data = json.dumps(data_alert_t1, indent=4)
-                print(Alert_json_data)
+                #print(Alert_json_data)
                 # MQTT data send
                 mqtt_data_alert_send = clientmqtt.publish(Alert_topic, Alert_json_data)
                 status = mqtt_data_alert_send.rc
-                if status == mqtt_client.MQTT_ERR_SUCCESS:
-                    print("Sent")
-                else:
-                    print("Failed")
+               # if status == mqtt_client.MQTT_ERR_SUCCESS:
+                    #print("Sent")
+                #else:
+                   # print("Failed")
             
             if int(tds_value) > int(Th_3):
                 current_datetime = datetime.datetime.now()
@@ -513,14 +513,14 @@ while True:
                 
                 # Create JSON data
                 Alert_json_data = json.dumps(data_alert_t1, indent=4)
-                print(Alert_json_data)
+                #print(Alert_json_data)
                 # MQTT data send
                 mqtt_data_alert_send = clientmqtt.publish(Alert_topic, Alert_json_data)
                 status = mqtt_data_alert_send.rc
                 if status == mqtt_client.MQTT_ERR_SUCCESS:
                     print("Sent")
-                else:
-                    print("Failed")
+                #else:
+                   # print("Failed")
             
             if int(turbidity) > int(Th_4):
                 current_datetime = datetime.datetime.now()
@@ -535,17 +535,17 @@ while True:
                 
                 # Create JSON data
                 Alert_json_data = json.dumps(data_alert_t1, indent=4)
-                print(Alert_json_data)
+               # print(Alert_json_data)
                 # MQTT data send
                 mqtt_data_alert_send = clientmqtt.publish(Alert_topic, Alert_json_data)
                 status = mqtt_data_alert_send.rc
                 if status == mqtt_client.MQTT_ERR_SUCCESS:
                     print("Sent")
-                else:
-                    print("Failed")
+                #else:
+                   # print("Failed")
     except Exception as e:
-        print("Error:", str(e))
+        #print("Error:", str(e))
         traceback.print_exc()
-        print("****************ERROR*********************")
+       #  print("****************ERROR*********************")
         time.sleep(2)
         continue 
