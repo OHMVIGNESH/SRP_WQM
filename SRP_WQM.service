@@ -1,9 +1,12 @@
 [Unit]
 Description="SRP-WQM"
+After=network.target
+Wants=network.target
 
 [Service]
-User=maxuser
-WorkingDirectory= /home/maxuser/Desktop/SRp/SRP_WQM
+User=root
+Environment=PYTHONPATH=/home/maxuser/.local/lib/python3.6/site-packages
+WorkingDirectory=/home/maxuser/Desktop/SRp/SRP_WQM
 ExecStart=/usr/bin/python3.6 /home/maxuser/Desktop/SRp/SRP_WQM/finealcode.py
 
 [Install]
