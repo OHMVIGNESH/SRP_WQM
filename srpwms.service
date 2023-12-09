@@ -1,0 +1,9 @@
+[Unit]
+Description=My Python Service
+
+[Service]
+ExecStart=/usr/bin/python3 /home/maxuser/Desktop/SRP_WQM-main/finealcode.py
+Restart=always
+
+[Install]
+WantedBy=default.target
